@@ -1,58 +1,94 @@
 package pacman.entries.ghosts;
 
-import java.security.KeyStore.Entry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import pacman.game.Constants.DM;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
+/**
+ * Esta clase es el propio algoritmo de Qlearning.
+ * Posee el HashMap donde se inicializarán todos los Q(S,a)
+ * y otro HashMap que guarda todos los indices de los nodos del juego junto a un booleano
+ * que indica si se trata de una esquina. Esto es un lugar donde debe cambiar el movimiento de forma obligatoria por otro
+ * que no sea justo el contrario. (UP -> LEFT, LEFT -> DOWN), nunca del tipo (LEFT -> RIGHT o UP -> DOWN).
+ * 
+ *  Dentro de Q(S,a) solo se guardan los estados en los que el fantasma está en un cruce (que tiene más de dos vecinos) o
+ *  en una esquina.
+ *  
+ *  eps -> ε
+ *  alpha -> α
+ *  gamma -> γ 
+ * @author julian
+ *
+ */
 public class Qlearning {
-	private Map<state, ArrayList<StateAction>> Q = new HashMap<state,ArrayList<StateAction>>();
+	private Map<State, ArrayList<StateAction>> Q = new HashMap<State,ArrayList<StateAction>>();
 	private Map<Integer, Boolean>corners = new HashMap<Integer, Boolean>();
 	private double eps;
 	private double alpha;
 	private double gamma;
 	private Game game;
-	
+	/**
+	 * Constructor
+	 * @param game se utiliza para obtener todos los indices de cruces y esquinas.
+	 * @param eps
+	 * @param alpha
+	 * @param gamma
+	 */
 	public Qlearning(Game game, double eps, double alpha, double gamma){
 		this.eps = eps;
 		this.alpha = alpha;
 		this.gamma = gamma;
 		this.game = game;
 		InitQ(game,10);
-		System.out.println("Busando...");
-		state s = new state(1271,MOVE.DOWN,1292,1);
-	/*	ArrayList <StateAction> aa = getMovesValues(s);
-		for(int i = 0; i < aa.size(); i++)
-			System.out.println(s.toString() + aa.get(i).toString());*/
 	}
 	
+	/**
+	 * Inicializa Q(S,a).
+	 * Las esquinas se inicializan dentro de customInitQ() mientras que los cruces se inicializan aquí.
+	 * @param game se utiliza para obtener todos los indices de cruces y esquinas.
+	 * @param value valor inicial que se les da a Q(S,a).
+	 */
 	private void InitQ(Game game, double value){
-		System.out.println("hola");
+		// Inicialización de las esquinas
 		customInitQ(game, value);
+		// Todos los últimos posibles movimientos
 		MOVE totalMoves [] = {MOVE.UP, MOVE.RIGHT, MOVE.LEFT, MOVE.DOWN};
+		// Todos los incides de los cruces (más de dos vecinos)
 		int junctions[] = game.getJunctionIndices();
+		// Por cada cruce
 		for(int i = 0; i < junctions.length; i++){
+			// Posibles movimientos en el cruce i
 			MOVE moves[] = game.getPossibleMoves(junctions[i]);
+			// Por cada indice en el que podría estar Ms.
 			for(int j = 0; j < 1292; j++){
+				// Si puede ser comido
 				for(int z = 0; z < 2; z++){
+					// Por cada último movimiento. Destacar que es posible que se creen estados a los que nunca se llegue.
+					// Por ejemplo un estado con índice I al que no se pueda llegar realizando MOVE.DOWN porque tiene una pared por encima.
+					// Se inicializan pero solo suponen un gasto memoria ya que como nunca van a ser alcanzados no reportarán problemas.
 					for(int k = 0; k < totalMoves.length; k++){
-						state s = new state(junctions[i], totalMoves[k],j,z);
+						/**
+						 * Creamos un estado con
+						 * ghostPosition -> junctions[i]  ->  el cruce
+						 * lastMove		-> totalMoves[k] 
+						 * msPosition -> j todos los nodos posibles
+						 * edible -> z 1 si sí 0 si no.
+						 */
+						State s = new State(junctions[i], totalMoves[k],j,z);
+						// Se crea una lista en la que se introducirán los posibles movimientos en el índice I.
 						ArrayList<StateAction> movValue = new ArrayList<StateAction>();
 						for(int x = 0; x < moves.length; x++){
+							// Nos preocumapos de no meter el movimiento contrario a totalMoves[k]; último movimiento realizado por el pacman.
 							if((totalMoves[k] == MOVE.UP && moves[x] != MOVE.DOWN) || (totalMoves[k] == MOVE.DOWN && moves[x] != MOVE.UP) ||
 							(totalMoves[k] == MOVE.RIGHT && moves[x] != MOVE.LEFT) || (totalMoves[k] == MOVE.LEFT && moves[x] != MOVE.RIGHT)){
 								StateAction as = new StateAction(moves[x], value);
 								movValue.add(as);
-								//System.out.println(s.toString() + ";" + moves[x]);
-								//Q.put(as, value);
 							}
-							//for(int l = 0; l < movValue.size(); l++)
-							//	System.out.println(s.toString() + movValue.get(i).toString());
+
 							Q.put(s, movValue);
 						}
 					}
@@ -61,17 +97,26 @@ public class Qlearning {
 		}
 	}
 	
-	// Guarda los nodos que nos son cruces pero en los que se cambia de dirección
+	/**
+	 * Guarda los nodos que nos son cruces pero en los que se cambia de dirección. Esquinas.
+	 * @param game se utiliza para obtener todos los indices de cruces y esquinas.
+	 * @param value valor inicial que se les da a Q(S,a).
+	 */
 	private void customInitQ(Game game, double value){
 		for(int i = 0; i < 1292; i++){
+			// Suponemos que no es una esquina
 			corners.put(i, false);
-			// Nodos que no son cruces
+			// Si el nodo no es un cruce.
 			if(!game.isJunction(i)){
 				MOVE moves[] = game.getPossibleMoves(i);
-				
+				// Y sus posibles movimientos no son los de un pasillo, esto es que no son movimientos contrarios.
+				// Valen todas las combinaciones excepto: (UP -- DOWN) y (LEFT -- RIGHT).
 				if(!((moves[0] == MOVE.UP && moves[1] == MOVE.DOWN) || (moves[0] == MOVE.DOWN && moves[1] == MOVE.UP) && 
 				(moves[0] == MOVE.LEFT && moves[1] == MOVE.RIGHT) || (moves[0] == MOVE.RIGHT && moves[1] == MOVE.LEFT))){
+					// Se trata de una esquina.
 					corners.put(i, true);
+					// Los movimientos contrarios a game.getPossibleMoves(i) son los movimientos que el fantasma
+					// podrá haber realizado como último movimiento para llegar a el nodo I.
 					MOVE contrario0, contrario1;
 					if(moves[0] == MOVE.DOWN)contrario0 = MOVE.UP;
 					else if(moves[0] == MOVE.UP)contrario0 = MOVE.DOWN;
@@ -83,15 +128,21 @@ public class Qlearning {
 					else if(moves[1] == MOVE.LEFT)contrario1 = MOVE.RIGHT;
 					else contrario1 = MOVE.LEFT;
 					
+					// Por cada posición en la que podeía estar el pacman.
 					for(int j = 0; j < 1292; j++){
+						// Si es comestible o no.
 						for(int z = 0; z < 2; z++){
-							state s0 = new state(i,contrario0,j,z);
+							// Creamos un estado con i, el contrario de moves[1], j y z.
+							State s0 = new State(i,contrario0,j,z);
+							// Creamos una lista con los posibles movimientos. En estos casos solo 1.
 							ArrayList<StateAction> movValue0 = new ArrayList<StateAction>();
+							// El único posible movimiento es el contrario de contrario0, moves[1].
 							StateAction as0 = new StateAction(moves[1], value);
 							movValue0.add(as0);
 							Q.put(s0, movValue0);
 							
-							s0 = new state(i,contrario1,j,z);
+							// Exactamente igual que lo anterior pero cambiando los movimientos por contrario1 y moves[0]-
+							s0 = new State(i,contrario1,j,z);
 							movValue0 = new ArrayList<StateAction>();
 							as0 = new StateAction(moves[0], value);
 							movValue0.add(as0);
@@ -103,25 +154,29 @@ public class Qlearning {
 		}
 	}
 	
-	public MOVE chooseMove(state s){
+	/**
+	 * Elige un movimiento y actualiza el valor de Q(S,a)
+	 * @param s el estado del juego en el momento t.
+	 * @return
+	 */
+	public MOVE chooseMove(State s){
+		// Inicializamos a NEUTRAL ya que es posible que el fantasma no se encuentre en un cruce.
 		MOVE myMove = MOVE.NEUTRAL;
 		// Observar si el estado existe dentro del conjunto Q(S,A)
 		ArrayList <StateAction> as = getMovesValues(s);
 		if(as != null){
-			
-			myMove = policy(s, as);	
+			// Dentro de los posibles movimientos la política elige uno de ellos.
+			myMove = policy(as);
+			// Tras el movimiento elegido se obtine un reward.
 			double reward = reward(s,myMove);
 			
-		//	System.out.print("viejo estado: " + s.toString() + myMove +";"+ reward);
-			// Buscamos el siguiente estado tras realiar el movimiento. Esto es
-			// el siguiente cruce o esquina que nos encontramos desde el actual tras tomar el movimiento myMove.
+			// Buscamos el siguiente estado tras realiar el movimiento.
 			int nextStateIndex = game.getNeighbour(s.getGhostPosition(), myMove);
+			// Mientras el siguiente estado no sea un cruce o esquina avanzamos.
 			while(!game.isJunction(nextStateIndex) && !corners.get(nextStateIndex)){
-				//System.out.println(nextStateIndex);
 				nextStateIndex = game.getNeighbour(nextStateIndex, myMove);
 			}
-			state nextState = new state(nextStateIndex, myMove, s.getMsPosition(), s.getEdible());
-		//	System.out.print("nuevo Estado" + nextState.toString());
+			State nextState = new State(nextStateIndex, myMove, s.getMsPosition(), s.getEdible());
 			ArrayList <StateAction> nextStateValues = getMovesValues(nextState);
 			// Obtenemos el movimiento con mejor score dentro del siguiente estado que alcanzaremos
 			double max = -10000;
@@ -132,15 +187,14 @@ public class Qlearning {
 			// Actualizamos el valor de Q(S,a)
 			// Buscamos cual de todos tenemos que actualizar dentro del arrayList
 			for(int i = 0; i < as.size(); i++)
-				if(myMove == as.get(i).getMove()){
+				if(myMove == as.get(i).getMove())
 					as.get(i).setValue(update(as.get(i).getValue(), reward, max));
-				//	System.out.println(as.get(i).getValue());
-				}
+				
 		}
 		return myMove;
 	}
 	
-	private MOVE policy(state s, ArrayList <StateAction> as){
+	private MOVE policy(ArrayList <StateAction> as){
 		double p = Math.random();
 		MOVE myMove = MOVE.NEUTRAL;
 		if(p < eps){
@@ -159,23 +213,18 @@ public class Qlearning {
 		return myMove;
 	}
 	
-	private double reward(state s, MOVE move){
+	private double reward(State s, MOVE move){
 		// Si el fantasma no puede ser comido
-	//	System.out.println(move+";"+s.getLastMoveMade()+";"+s.getGhostPosition()+";" + s.getMsPosition());
 		try{
 			if(s.getEdible() == 0){
-			//	System.out.println("Antes de la llamada");
 				MOVE bestMove = game.getApproximateNextMoveTowardsTarget(s.getGhostPosition(), s.getMsPosition(), s.getLastMoveMade(), DM.PATH);
-			//	System.out.println("Despues de la llamada");
 				// Si el movimiento elegido corresponde con el mejor reward positivo
 				if(move == bestMove)return 1.0;
 				else return -1.0;
 			}
 			// En caso de que el fantasma pueda ser comido el mejor movimiento es alejarse del pacman
 			else{
-			//	System.out.println("Antes de la llamada");
 				MOVE bestMove = game.getApproximateNextMoveAwayFromTarget(s.getGhostPosition(), s.getMsPosition(), s.getLastMoveMade(), DM.PATH);
-			//	System.out.println("Despues de la llamada");
 				if(move == bestMove)return 1.0;
 				else return -1.0;
 			}
@@ -188,13 +237,13 @@ public class Qlearning {
 	private double update(double qsa, double reward, double qsb){
 		return(qsa + alpha * (reward + gamma * qsb - qsa));
 	}
-	public ArrayList <StateAction> getMovesValues(state s){
+	public ArrayList <StateAction> getMovesValues(State s){
 		ArrayList <StateAction> as = new ArrayList <StateAction>();
 		as = Q.get(s);
 		return as;
 	}
 	
-	public void search(state s){
+	public void search(State s){
 		ArrayList <StateAction> as = getMovesValues(s);
 		for(int j = 0; j < as.size(); j++)
 			System.out.println(s.toString() + as.get(j).toString());
