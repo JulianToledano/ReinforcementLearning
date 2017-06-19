@@ -53,20 +53,26 @@ public class Executor
 		Qlearning q = new Qlearning(ng, 0.1, 0.2, 0.8);		
 		
 		//exec.jugar(new StarterPacMan(), new StarterGhosts(), visual, 0.1, 0.2, 0.8, 1000);
-		exec.jugar(new StarterPacMan(), new MyGhosts(q), true, 0.1, 0.2, 0.8, 10000);
+		exec.jugar(new StarterPacMan(), new MyGhosts(q), true, 10000);
 		//exec.jugar(new NearestPillPacMan(), new StarterGhosts(), visual, 0.1, 0.2, 0.8, 1000);
-		//exec.jugar(new NearestPillPacMan(), new MyGhosts(q), visual, 0.1, 0.2, 0.8, 10000);
+		exec.jugar(new NearestPillPacMan(), new MyGhosts(q), true, 10000);
 
 	}
-	
+	/**
+	 * COPIA DE runExperiment
+	 * Partida para entrenar los Qlearnings.
+	 * Se acaba al quedarse el pacman sin vidas o al terminzar el laberinto 1.
+	 * @param pacManController controlador pacman
+	 * @param ghostController controlador de RL
+	 * @param trials número de veces que se juega
+	 */
 	  public void entrenar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,int trials)
 	    {
 	    	double avgScore=0;
 	    	
 	    	Random rnd=new Random(0);
 			Game game;
-			//Game ng = new Game(0);
-			//Qlearning q = new Qlearning(ng, 0.2);
+
 			for(int i=0;i<trials;i++)
 			{
 				game=new Game(rnd.nextLong());
@@ -84,8 +90,16 @@ public class Executor
 			System.out.println(avgScore/trials);
 
 	    }
-	  
-	  public void jugar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,boolean visual, double eps, double alpha, double gamma, int trials)
+	  /**
+	   * COPIA DE runGameTimed
+	   *  Primero se entrena al pacman con entrenar.
+	   *  Después se juega una partida en forma visual.
+	   * @param pacManController controlador pacman
+	   * @param ghostController controlador RL
+	   * @param visual booleano que indica si se ve en forma visual o no
+	   * @param trials número de veces que se puede entrenar
+	   */
+	  public void jugar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,boolean visual, /*double eps, double alpha, double gamma, */int trials)
 		{
 			Game game=new Game(0);
 			//Qlearning q = new Qlearning(game, eps, alpha, gamma);
