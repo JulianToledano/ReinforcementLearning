@@ -3,6 +3,7 @@ package pacman.entries.ghosts;
 import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
+
 /**
  * Esta clase representa el estado del juego en un momento t
  * Es una tupla
