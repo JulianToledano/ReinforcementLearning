@@ -178,22 +178,28 @@ public class Qlearning {
 			}
 			State nextState = new State(nextStateIndex, myMove, s.getMsPosition(), s.getEdible());
 			ArrayList <StateAction> nextStateValues = getMovesValues(nextState);
-			// Obtenemos el movimiento con mejor score dentro del siguiente estado que alcanzaremos
+			// Obtenemos el movimiento con mejor score dentro del siguiente estado que alcanzamos.
 			double max = -10000;
 			for(int i = 0; i < nextStateValues.size(); i++)
 				if(max < nextStateValues.get(i).getValue())
 					max = nextStateValues.get(i).getValue();
 			
-			// Actualizamos el valor de Q(S,a)
-			// Buscamos cual de todos tenemos que actualizar dentro del arrayList
+			// Buscamos cual de todos tenemos que actualizar dentro del arrayList.
 			for(int i = 0; i < as.size(); i++)
+				// Actualizamos el valor de Q(S,a).
 				if(myMove == as.get(i).getMove())
 					as.get(i).setValue(update(as.get(i).getValue(), reward, max));
 				
 		}
 		return myMove;
 	}
-	
+	/**
+	 * Política ε-greedy
+	 * Se crea un número aleatorio, si este es superior a a ε, se toma el mejor movimiento,
+	 * en caso contrario se toma un movimiento aleatorio.
+	 * @param as arraylist con los posibles movimientos y sus scores.
+	 * @return
+	 */
 	private MOVE policy(ArrayList <StateAction> as){
 		double p = Math.random();
 		MOVE myMove = MOVE.NEUTRAL;
@@ -212,11 +218,16 @@ public class Qlearning {
 		}
 		return myMove;
 	}
-	
-	private double reward(State s, MOVE move){
-		// Si el fantasma no puede ser comido
+	/**
+	 * @param s estado del juego en el momento t
+	 * @param move movimiento elegido para llevar a cabo en el estado s
+	 * @return 1.0 en caso de que sea un movimiento óptimo, -1.0 en caso contrario.
+	 */
+	private double reward(State s, MOVE move){		
 		try{
+			// Si el fantasma no puede ser comido
 			if(s.getEdible() == 0){
+				// El mejor movimiento es acercarse hacia el pacman.
 				MOVE bestMove = game.getApproximateNextMoveTowardsTarget(s.getGhostPosition(), s.getMsPosition(), s.getLastMoveMade(), DM.PATH);
 				// Si el movimiento elegido corresponde con el mejor reward positivo
 				if(move == bestMove)return 1.0;
@@ -233,19 +244,24 @@ public class Qlearning {
 			return 0;
 		}
 	}
-	
+	/**
+	 * Q(s, a) ← Q(s, a) + α · [r + γ · maxQ(s’, b) – Q(s,a)]
+	 * @param qsa → score en de Q(S,a)
+	 * @param reward → r
+	 * @param qsb → score de maxQ(s’, b)
+	 * @return el resultado de la fórmula
+	 */
 	private double update(double qsa, double reward, double qsb){
 		return(qsa + alpha * (reward + gamma * qsb - qsa));
 	}
+	
+	/**
+	 * @param s un estado en el momento t
+	 * @return lista de los posibles movimientos en el estado s
+	 */
 	public ArrayList <StateAction> getMovesValues(State s){
 		ArrayList <StateAction> as = new ArrayList <StateAction>();
 		as = Q.get(s);
 		return as;
-	}
-	
-	public void search(State s){
-		ArrayList <StateAction> as = getMovesValues(s);
-		for(int j = 0; j < as.size(); j++)
-			System.out.println(s.toString() + as.get(j).toString());
 	}
 }
