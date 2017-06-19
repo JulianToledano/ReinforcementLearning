@@ -3,7 +3,17 @@ package pacman.entries.ghosts;
 import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
-
+/**
+ * Esta clase representa el estado del juego en un momento t
+ * Es una tupla
+ * S = {S0, S1, S2, S3} donde:
+ * S0	->	Representa la posición del fantasma.
+ * S1	->	Representa el último movimiento realizado por el fantasma.
+ * S2	->	Representa la posición de Ms Pacman.
+ * S3	-> 	Representa si el fantasma puede ser comido.
+ * @author julian
+ *
+ */
 public class State {
 	private int ghostPosition;
 	private MOVE ghostLastMove;
@@ -25,6 +35,12 @@ public class State {
 		else edible = 0;
 	}
 	
+	/**
+	 * Funciones hashCode y equals necesarioas para utilizar la clase como clave dentro
+	 * de una hash.
+	 * 
+	 * El hashcode se basa en la multiplicación de números primos.
+	 */
 	@Override
 	public int hashCode(){
 		 int result = 17;
@@ -53,6 +69,7 @@ public class State {
 				 s.getMsPosition() == msPosition &&
 				 s.getEdible() == edible);
 	}
+	
 	// Metodos get
 	public int getGhostPosition(){return ghostPosition;}
 	public MOVE getLastMoveMade(){return ghostLastMove;}
