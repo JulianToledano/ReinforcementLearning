@@ -1,14 +1,11 @@
 package pacman.entries.ghosts;
 
 import java.util.EnumMap;
+
 import pacman.controllers.Controller;
 import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
-
-
-
-
 
 /*
  * This is the class you need to modify for your entry. In particular, you need to
@@ -18,17 +15,30 @@ import pacman.game.Game;
 public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 {
 	private EnumMap<GHOST, MOVE> myMoves=new EnumMap<GHOST, MOVE>(GHOST.class);
+	private Qlearning qlearn;
 	
-	public MyGhosts(){
-		
+	public MyGhosts(Game ng, double eps, double alpha, double gamma){
+		qlearn = new Qlearning(ng, eps, alpha, gamma);
 	}
 	
+	public MyGhosts(Qlearning q){
+		qlearn = q;
+	}
+	
+	public MOVE getMove(state s){
+		return qlearn.chooseMove(s);
+	}
+	
+	public Qlearning getQ(){return qlearn;}
+	
 	public EnumMap<GHOST, MOVE> getMove(Game game, long timeDue)
-	{
+	{	
 		myMoves.clear();
-		
-		//Place your game logic here to play the game as the ghosts
-		
+		for(GHOST ghosts : GHOST.values()){
+			state s = new state(game, ghosts);
+			MOVE move = getMove(s);
+			myMoves.put(ghosts, move);
+		}
 		return myMoves;
 	}
 }

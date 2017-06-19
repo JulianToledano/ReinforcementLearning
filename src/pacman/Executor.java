@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Random;
+import java.util.Scanner;
 
 import dataRecording.DataCollectorController;
 import pacman.controllers.Controller;
@@ -24,9 +25,11 @@ import pacman.controllers.examples.RandomNonRevPacMan;
 import pacman.controllers.examples.RandomPacMan;
 import pacman.controllers.examples.StarterGhosts;
 import pacman.controllers.examples.StarterPacMan;
+import pacman.entries.ghosts.MyGhosts;
+import pacman.entries.ghosts.Qlearning;
+import pacman.entries.ghosts.ActionScore;
 import pacman.game.Game;
 import pacman.game.GameView;
-
 import static pacman.game.Constants.*;
 
 /**
@@ -51,21 +54,38 @@ public class Executor
 		//run multiple games in batch mode - good for testing.
 		int numTrials=10;
 //		exec.runExperiment(new RandomPacMan(),new RandomGhosts(),numTrials);
-		 
-		
+
 		/*
 		//run a game in synchronous mode: game waits until controllers respond.
 		int delay=5;
 		boolean visual=true;
 		exec.runGame(new RandomPacMan(),new RandomGhosts(),visual,delay);
   		 */
-		
 		///*
 		//run the game in asynchronous mode.
 		boolean visual=true;
 //		exec.runGameTimed(new NearestPillPacMan(),new AggressiveGhosts(),visual);
-//		exec.runGameTimed(new StarterPacMan(),new StarterGhosts(),visual);
-//		exec.runGameTimed(new HumanController(new KeyBoardInput()),new StarterGhosts(),visual);	
+	//	for(int i = 0; i < 2; i++){
+		//	System.out.println("PARTIDA NÚMERO: " + i);
+		//	System.out.println("--------------------------------------------");
+			//exec.entrenar(new NearestPillPacMan(),new MyGhosts(sarsa),500);
+		Game ng = new Game(0);
+		
+		Qlearning q = new Qlearning(ng, 0.1, 0.2, 0.8);
+		if(ng.isJunction(703))System.out.println("Si es");
+		//for(int i = 0; i < 10; i++)
+		/*System.out.println("Starter Pacman");
+		exec.entrenar(new StarterPacMan(),new MyGhosts(q),1000);
+		System.out.println("Nearest Pill Pacman");
+		exec.entrenar(new NearestPillPacMan(),new MyGhosts(ng, 0.1, 0.2, 0.8),1);*/
+
+		//exec.runGameTimed(new DataCollectorController(new KeyBoardInput()),new RandomGhosts(),visual);
+
+		//	System.out.println("--------------------------------------------");
+		//}
+
+		//exec.runGameTimed(new NearestPillPacMan(),new MyGhosts(sarsa),visual);
+	
 		//*/
 		
 		/*
@@ -75,7 +95,7 @@ public class Executor
 		boolean fixedTime=false;
 		exec.runGameTimedSpeedOptimised(new RandomPacMan(),new RandomGhosts(),fixedTime,visual);
 		*/
-		
+		exec.jugar(new StarterPacMan(), new MyGhosts(q), visual, 0.1, 0.2, 0.8, 10000);
 		/*
 		//run game in asynchronous mode and record it to file for replay at a later stage.
 		boolean visual=true;
@@ -85,9 +105,76 @@ public class Executor
 		 */
 		
 		//run game for data collection
-		exec.runGameTimed(new DataCollectorController(new KeyBoardInput()),new StarterGhosts(),visual);
+		//exec.runGameTimed(new DataCollectorController(new KeyBoardInput()),new StarterGhosts(),visual);
 	}
 	
+	  public void entrenar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,int trials)
+	    {
+	    	double avgScore=0;
+	    	
+	    	Random rnd=new Random(0);
+			Game game;
+			//Game ng = new Game(0);
+			//Qlearning q = new Qlearning(ng, 0.2);
+			for(int i=0;i<trials;i++)
+			{
+				game=new Game(rnd.nextLong());
+				
+				while(game.getMazeIndex() == 0 && !game.gameOver())
+				{
+			        game.advanceGame(pacManController.getMove(game.copy(),System.currentTimeMillis()+DELAY),
+			        		ghostController.getMove(game.copy(),System.currentTimeMillis()+DELAY));
+				}
+				
+				avgScore+=game.getScore();
+				System.out.println(i+"\t"+game.getScore());
+			}
+			
+			System.out.println(avgScore/trials);
+
+	    }
+	  
+	  public void jugar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,boolean visual, double eps, double alpha, double gamma, int trials)
+		{
+			Game game=new Game(0);
+			//Qlearning q = new Qlearning(game, eps, alpha, gamma);
+			GameView gv=null;
+			System.out.println("Dentro de jugar Pacman");
+			entrenar(pacManController,ghostController,trials);
+			System.out.println("Después de entrenar");
+			if(visual)
+				gv=new GameView(game).showGame();
+			
+			if(pacManController instanceof HumanController)
+				gv.getFrame().addKeyListener(((HumanController)pacManController).getKeyboardInput());
+					
+			new Thread(pacManController).start();
+			new Thread(ghostController).start();
+			
+			while(game.getMazeIndex() == 0 && !game.gameOver())
+			{
+				pacManController.update(game.copy(),System.currentTimeMillis()+DELAY);
+				ghostController.update(game.copy(),System.currentTimeMillis()+DELAY);
+				System.out.println(game.getPacmanCurrentNodeIndex());
+				try
+				{
+					Thread.sleep(DELAY);
+				}
+				catch(InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+
+		        game.advanceGame(pacManController.getMove(),ghostController.getMove());	   
+		        
+		        if(visual)
+		        	gv.repaint();
+			}
+			
+			pacManController.terminate();
+			ghostController.terminate();
+		}
+	   
     /**
      * For running multiple games without visuals. This is useful to get a good idea of how well a controller plays
      * against a chosen opponent: the random nature of the game means that performance can vary from game to game. 
@@ -179,7 +266,7 @@ public class Executor
 		{
 			pacManController.update(game.copy(),System.currentTimeMillis()+DELAY);
 			ghostController.update(game.copy(),System.currentTimeMillis()+DELAY);
-
+			System.out.println(game.getPacmanCurrentNodeIndex());
 			try
 			{
 				Thread.sleep(DELAY);
