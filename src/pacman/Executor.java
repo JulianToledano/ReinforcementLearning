@@ -27,7 +27,6 @@ import pacman.controllers.examples.StarterGhosts;
 import pacman.controllers.examples.StarterPacMan;
 import pacman.entries.ghosts.MyGhosts;
 import pacman.entries.ghosts.Qlearning;
-import pacman.entries.ghosts.ActionScore;
 import pacman.game.Game;
 import pacman.game.GameView;
 import static pacman.game.Constants.*;
@@ -49,63 +48,15 @@ public class Executor
 	public static void main(String[] args)
 	{
 		Executor exec=new Executor();
-
 		
-		//run multiple games in batch mode - good for testing.
-		int numTrials=10;
-//		exec.runExperiment(new RandomPacMan(),new RandomGhosts(),numTrials);
-
-		/*
-		//run a game in synchronous mode: game waits until controllers respond.
-		int delay=5;
-		boolean visual=true;
-		exec.runGame(new RandomPacMan(),new RandomGhosts(),visual,delay);
-  		 */
-		///*
-		//run the game in asynchronous mode.
-		boolean visual=true;
-//		exec.runGameTimed(new NearestPillPacMan(),new AggressiveGhosts(),visual);
-	//	for(int i = 0; i < 2; i++){
-		//	System.out.println("PARTIDA NÚMERO: " + i);
-		//	System.out.println("--------------------------------------------");
-			//exec.entrenar(new NearestPillPacMan(),new MyGhosts(sarsa),500);
 		Game ng = new Game(0);
+		Qlearning q = new Qlearning(ng, 0.1, 0.2, 0.8);		
 		
-		Qlearning q = new Qlearning(ng, 0.1, 0.2, 0.8);
-		if(ng.isJunction(703))System.out.println("Si es");
-		//for(int i = 0; i < 10; i++)
-		/*System.out.println("Starter Pacman");
-		exec.entrenar(new StarterPacMan(),new MyGhosts(q),1000);
-		System.out.println("Nearest Pill Pacman");
-		exec.entrenar(new NearestPillPacMan(),new MyGhosts(ng, 0.1, 0.2, 0.8),1);*/
+		//exec.jugar(new StarterPacMan(), new StarterGhosts(), visual, 0.1, 0.2, 0.8, 1000);
+		exec.jugar(new StarterPacMan(), new MyGhosts(q), true, 0.1, 0.2, 0.8, 10000);
+		//exec.jugar(new NearestPillPacMan(), new StarterGhosts(), visual, 0.1, 0.2, 0.8, 1000);
+		//exec.jugar(new NearestPillPacMan(), new MyGhosts(q), visual, 0.1, 0.2, 0.8, 10000);
 
-		//exec.runGameTimed(new DataCollectorController(new KeyBoardInput()),new RandomGhosts(),visual);
-
-		//	System.out.println("--------------------------------------------");
-		//}
-
-		//exec.runGameTimed(new NearestPillPacMan(),new MyGhosts(sarsa),visual);
-	
-		//*/
-		
-		/*
-		//run the game in asynchronous mode but advance as soon as both controllers are ready  - this is the mode of the competition.
-		//time limit of DELAY ms still applies.
-		boolean visual=true;
-		boolean fixedTime=false;
-		exec.runGameTimedSpeedOptimised(new RandomPacMan(),new RandomGhosts(),fixedTime,visual);
-		*/
-		exec.jugar(new StarterPacMan(), new MyGhosts(q), visual, 0.1, 0.2, 0.8, 10000);
-		/*
-		//run game in asynchronous mode and record it to file for replay at a later stage.
-		boolean visual=true;
-		String fileName="replay.txt";
-		exec.runGameTimedRecorded(new HumanController(new KeyBoardInput()),new RandomGhosts(),visual,fileName);
-		//exec.replayGame(fileName,visual);
-		 */
-		
-		//run game for data collection
-		//exec.runGameTimed(new DataCollectorController(new KeyBoardInput()),new StarterGhosts(),visual);
 	}
 	
 	  public void entrenar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,int trials)
@@ -139,9 +90,7 @@ public class Executor
 			Game game=new Game(0);
 			//Qlearning q = new Qlearning(game, eps, alpha, gamma);
 			GameView gv=null;
-			System.out.println("Dentro de jugar Pacman");
 			entrenar(pacManController,ghostController,trials);
-			System.out.println("Después de entrenar");
 			if(visual)
 				gv=new GameView(game).showGame();
 			
@@ -155,7 +104,6 @@ public class Executor
 			{
 				pacManController.update(game.copy(),System.currentTimeMillis()+DELAY);
 				ghostController.update(game.copy(),System.currentTimeMillis()+DELAY);
-				System.out.println(game.getPacmanCurrentNodeIndex());
 				try
 				{
 					Thread.sleep(DELAY);
@@ -170,7 +118,7 @@ public class Executor
 		        if(visual)
 		        	gv.repaint();
 			}
-			
+			//runGameTimed(new DataCollectorController(new KeyBoardInput()),ghostController,visual);
 			pacManController.terminate();
 			ghostController.terminate();
 		}
