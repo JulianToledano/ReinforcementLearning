@@ -4,20 +4,20 @@ import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 
-public class state {
+public class State {
 	private int ghostPosition;
 	private MOVE ghostLastMove;
 	private int msPosition;
 	private int edible;
 	
-	public state(){}
-	public state(int ghostPosition, MOVE ghostLastMove, int msPosition, int edible){
+	public State(){}
+	public State(int ghostPosition, MOVE ghostLastMove, int msPosition, int edible){
 		this.ghostPosition = ghostPosition;
 		this.ghostLastMove = ghostLastMove;
 		this.msPosition = msPosition;
 		this.edible = edible;
 	}
-	public state(Game game, GHOST ghost){
+	public State(Game game, GHOST ghost){
 		this.ghostPosition = game.getGhostCurrentNodeIndex(ghost);
 		this.ghostLastMove = game.getGhostLastMoveMade(ghost);
 		this.msPosition = game.getPacmanCurrentNodeIndex();
@@ -45,9 +45,9 @@ public class state {
 	@Override
 	public boolean equals(Object o){
 		if(o == this)return true;
-		 if (!(o instanceof state))
+		 if (!(o instanceof State))
 			 return false;
-		 state s = (state) o;
+		 State s = (State) o;
 		 return (s.getGhostPosition() == ghostPosition &&
 				 s.getLastMoveMade() == ghostLastMove &&
 				 s.getMsPosition() == msPosition &&
