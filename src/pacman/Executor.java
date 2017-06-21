@@ -50,12 +50,16 @@ public class Executor
 		Executor exec=new Executor();
 		
 		Game ng = new Game(0);
-		Qlearning q = new Qlearning(ng, 0.1, 0.2, 0.8);		
+		Qlearning q = new Qlearning(ng, 10, 0.1, 0.2, 0.8);		
 		
-		//exec.jugar(new StarterPacMan(), new StarterGhosts(), visual, 0.1, 0.2, 0.8, 1000);
-		exec.jugar(new StarterPacMan(), new MyGhosts(q), true, 10000);
+		exec.entrenar(new StarterPacMan(), new StarterGhosts(), 10000);
+		exec.entrenar(new StarterPacMan(), new StarterGhosts(), 1000);
+	//	exec.jugar(new StarterPacMan(), new StarterGhosts(), true, 1000);
+	//	exec.jugar(new StarterPacMan(), new MyGhosts(q), true, 10);
 		//exec.jugar(new NearestPillPacMan(), new StarterGhosts(), visual, 0.1, 0.2, 0.8, 1000);
-		exec.jugar(new NearestPillPacMan(), new MyGhosts(q), true, 10000);
+		//exec.jugar(new NearestPillPacMan(), new MyGhosts(q), true, 10000);
+		
+		//exec.jugar(new DataCollectorController(new KeyBoardInput()), new MyGhosts(q), true, 10000);
 
 	}
 	/**
@@ -64,7 +68,7 @@ public class Executor
 	 * Se acaba al quedarse el pacman sin vidas o al terminzar el laberinto 1.
 	 * @param pacManController controlador pacman
 	 * @param ghostController controlador de RL
-	 * @param trials número de veces que se juega
+	 * @param trials n��mero de veces que se juega
 	 */
 	  public void entrenar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,int trials)
 	    {
@@ -93,18 +97,19 @@ public class Executor
 	  /**
 	   * COPIA DE runGameTimed
 	   *  Primero se entrena al pacman con entrenar.
-	   *  Después se juega una partida en forma visual.
+	   *  Despu��s se juega una partida en forma visual.
+	   *  Por ��ltimo juega 1000 partidas para comprobar el rendimiento real.
 	   * @param pacManController controlador pacman
 	   * @param ghostController controlador RL
 	   * @param visual booleano que indica si se ve en forma visual o no
-	   * @param trials número de veces que se puede entrenar
+	   * @param trials n��mero de veces que se puede entrenar
 	   */
 	  public void jugar(Controller<MOVE> pacManController,Controller<EnumMap<GHOST,MOVE>> ghostController,boolean visual, /*double eps, double alpha, double gamma, */int trials)
 		{
 			Game game=new Game(0);
 			//Qlearning q = new Qlearning(game, eps, alpha, gamma);
 			GameView gv=null;
-			entrenar(pacManController,ghostController,trials);
+			entrenar(new StarterPacMan(),ghostController,trials);
 			if(visual)
 				gv=new GameView(game).showGame();
 			
@@ -133,6 +138,7 @@ public class Executor
 		        	gv.repaint();
 			}
 			//runGameTimed(new DataCollectorController(new KeyBoardInput()),ghostController,visual);
+		//	entrenar(pacManController,ghostController,10);
 			pacManController.terminate();
 			ghostController.terminate();
 		}

@@ -17,15 +17,15 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 	private EnumMap<GHOST, MOVE> myMoves=new EnumMap<GHOST, MOVE>(GHOST.class);
 	private Qlearning qlearn;
 	
-	public MyGhosts(Game ng, double eps, double alpha, double gamma){
-		qlearn = new Qlearning(ng, eps, alpha, gamma);
+	public MyGhosts(Game ng, double value, double eps, double alpha, double gamma){
+		qlearn = new Qlearning(ng, value, eps, alpha, gamma);
 	}
 	
 	public MyGhosts(Qlearning q){
 		qlearn = q;
 	}
 	
-	public MOVE getMove(state s){
+	public MOVE getMove(State s){
 		return qlearn.chooseMove(s);
 	}
 	
@@ -35,7 +35,7 @@ public class MyGhosts extends Controller<EnumMap<GHOST,MOVE>>
 	{	
 		myMoves.clear();
 		for(GHOST ghosts : GHOST.values()){
-			state s = new state(game, ghosts);
+			State s = new State(game, ghosts);
 			MOVE move = getMove(s);
 			myMoves.put(ghosts, move);
 		}
