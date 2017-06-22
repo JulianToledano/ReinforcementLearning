@@ -10,12 +10,12 @@ import pacman.game.Game;
 
 /**
  * Esta clase es el propio algoritmo de Qlearning.
- * Posee el HashMap donde se inicializar��n todos los Q(S,a)
+ * Posee el HashMap donde se inicializarán todos los Q(S,a)
  * y otro HashMap que guarda todos los indices de los nodos del juego junto a un booleano
  * que indica si se trata de una esquina. Esto es un lugar donde debe cambiar el movimiento de forma obligatoria por otro
  * que no sea justo el contrario. (UP -> LEFT, LEFT -> DOWN), nunca del tipo (LEFT -> RIGHT o UP -> DOWN).
  * 
- *  Dentro de Q(S,a) solo se guardan los estados en los que el fantasma est�� en un cruce (que tiene m��s de dos vecinos) o
+ *  Dentro de Q(S,a) solo se guardan los estados en los que el fantasma está en un cruce (que tiene más de dos vecinos) o
  *  en una esquina.
  *  
  *  eps -> ��
@@ -88,9 +88,9 @@ public class Qlearning {
 								StateAction as = new StateAction(moves[x], value);
 								movValue.add(as);
 							}
-
-							Q.put(s, movValue);
+							//Q.put(s, movValue);
 						}
+						Q.put(s, movValue);
 					}
 				}
 			}
